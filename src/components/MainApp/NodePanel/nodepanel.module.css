@@ -1,0 +1,5 @@
+.container {
+    border: 1px #cdcdcd solid;
+    border-radius: 10px;
+    min-height: 800px;
+}

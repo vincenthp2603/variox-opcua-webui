@@ -1,0 +1,13 @@
+.mainBlock {
+    padding: 10px 0;
+    text-align: center;
+}
+
+.searchBtn {
+    margin-top: 10px;
+}
+
+.errorMessage {
+    color: salmon;
+    margin: 10px 0;
+}
