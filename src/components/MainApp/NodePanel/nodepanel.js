@@ -1,9 +1,10 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { browseTreeNode } from '../../../redux/slices/mainslice';
+import { browseTreeNode, queryTreeNode, selectTreeNode } from '../../../redux/slices/mainslice';
 import { nodeIsBrowsed } from '../../../redux/slices/utils';
 import { TreeView, Grid, GridItem } from '@patternfly/react-core';
 import styles from './nodepanel.module.css';
+import { clearIntervals } from './utils';
 
 const NodePanel = () => {
     let tree = useSelector(state => state.nodesTree);
@@ -12,22 +13,24 @@ const NodePanel = () => {
 
     let onSelectHandler = (_e, item) => {
         let nodeId = item.id;
+        dispatch(selectTreeNode(nodeId));
         if (!nodeIsBrowsed(tree, nodeId)) {
-            let browseConfig = {
-                serverUrl: serverUrl,
-                nodeId: nodeId
-            }
-            dispatch(browseTreeNode(browseConfig));
-            console.log("Browsing...")
-        } else {
-            console.log('Node is already browsed');
+            dispatch(browseTreeNode(nodeId));
         }
+        clearIntervals();
+        dispatch(queryTreeNode(nodeId));
+        setInterval(() => {
+            dispatch(queryTreeNode(nodeId));
+        }, 1000);
     }
 
     return (
         <Grid>
-            <GridItem span={10} offset={1}>
+            <GridItem span={12}>
                 <div className={styles.container}>
+                    <div>
+                        <b>Endpoint: </b> {serverUrl}
+                    </div>
                     <TreeView
                         data={tree}
                         onSelect={(e, item) => onSelectHandler(e, item)}

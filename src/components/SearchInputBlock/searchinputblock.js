@@ -11,12 +11,8 @@ const SearchInputBlock = () => {
     let searchstr = useSelector(state => state.searchUrl);
 
     let onClickHandler = () => {
-        let browseConfig = {
-            serverUrl: searchstr,
-            nodeId: "RootFolder"
-        }
         dispatch(updateServerUrl(searchstr));
-        dispatch(browseTreeNode(browseConfig));
+        dispatch(browseTreeNode("RootFolder"));
     }
 
     return (
@@ -29,7 +25,9 @@ const SearchInputBlock = () => {
             >
                 Browse
             </Button>
-            <div className={styles.errorMessage}>Placeholder for error message</div>
+            {
+                //<div className={styles.errorMessage}>Placeholder for error message</div>
+            }
         </div>
     )
 }

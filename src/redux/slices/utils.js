@@ -16,6 +16,27 @@ export async function browse(serverUrl, nodeId) {
     }
 }
 
+export async function query(serverUrl, nodeId) {
+    try {
+        let response = await axios({
+            method: 'post',
+            url: 'http://localhost:8000/query',
+            data: {
+                serverurl: serverUrl,
+                nodeId: nodeId
+            }
+        })
+        return {
+            id: nodeId,
+            queryData: {
+                ...response.data
+            }
+        };
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 export function formatTreeNode(browseData) {
     let rootnode = { ...browseData };
 
@@ -29,13 +50,13 @@ export function formatTreeNode(browseData) {
         rootnode.name = browseData.displayName;
         rootnode.browseName = browseData.browseName;
     }
-    
+
     if (browseData.hasChildren) {
         rootnode.children = [];
         for (let child of browseData.children) {
             let childNode = formatTreeNode(child);
             rootnode.children.push(childNode);
-        } 
+        }
     } else {
         rootnode.children = undefined;
     }
@@ -48,7 +69,7 @@ export function updateTreeNode(tree, nodeId, updatedData) {
         if (node.id === nodeId) {
             return {
                 ...node,
-                children: [ ...updatedData.children ]
+                children: [...updatedData.children]
             }
         } else if (node.hasChildren) {
             return {
@@ -62,7 +83,7 @@ export function updateTreeNode(tree, nodeId, updatedData) {
 
 export function nodeIsBrowsed(tree, nodeId) {
     let tmpResult = true;
-    let result = true; 
+    let result = true;
     for (let node of tree) {
         if (node.id === nodeId) {
             if (node.hasChildren && node.children.length === 0) {
@@ -75,4 +96,21 @@ export function nodeIsBrowsed(tree, nodeId) {
         result = result && tmpResult;
     }
     return result;
+}
+
+export function getNodeById(tree, nodeId) {
+    for (let node of tree) {
+        if (node.id === nodeId) {
+            return node;
+        }
+        if (node.hasChildren && node.children.length !== 0) {
+            let subResult = getNodeById(node.children, nodeId);
+            if (subResult) {
+                return subResult;
+            } else {
+                continue;
+            }
+        }
+    }
+    return null;
 }

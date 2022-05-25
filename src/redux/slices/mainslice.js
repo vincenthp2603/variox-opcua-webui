@@ -1,27 +1,29 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { browse, formatTreeNode, updateTreeNode } from './utils'
+import { browse, query, formatTreeNode, updateTreeNode, getNodeById } from './utils'
 
-const initialTree = [
-    {
-        name: 'Root',
-        id: 'RootFolder',
-        hasChildren: true,
-        children: []
-    }
-]
+let rootNode = {
+    name: 'Root',
+    id: 'RootFolder',
+    browseName: 'RootFolder',
+    nodeClass: 'Object',
+    hasChildren: true,
+    children: []
+}
+
+const initialTree = [rootNode];
 
 const initialState = {
     serverUrl: 'opc.tcp://opcuaserver.com:48010',
     searchUrl: 'opc.tcp://opcuaserver.com:48010',
-    nodesTree: [ ...initialTree ]
+    nodesTree: [ ...initialTree ],
+    selectedNode: { ...rootNode, queryData: undefined }
 }
 
 export const browseTreeNode = createAsyncThunk(
     'main/browseTreeNode',
-    async (config) => {
+    async (nodeId, { getState }) => {
         try {
-            console.log(config);
-            let { serverUrl, nodeId } = { ...config }
+            let serverUrl = getState().serverUrl;
             let nodeBrowseData = await browse(serverUrl, nodeId);
             return formatTreeNode(nodeBrowseData);
         } catch (err) {
@@ -30,13 +32,35 @@ export const browseTreeNode = createAsyncThunk(
     }
 )
 
+export const queryTreeNode = createAsyncThunk(
+    'main/queryTreeNode',
+    async (nodeId, { getState }) => {
+        try {
+            let serverUrl = getState().serverUrl;
+            let nodeQueryData = await query(serverUrl, nodeId);
+            return nodeQueryData;
+        } catch (err) {
+            console.log(err);
+        }
+    }
+)
+
+const queryTreeNodeSuccess = (state, action) => {
+    console.log("Query Success!")
+    let queryNodeId = action.payload.id;
+    if (queryNodeId === state.selectedNode.id) {
+        state.selectedNode.queryData = { ...action.payload.queryData }
+    }
+}
+
 const browseTreeNodeSuccess = (state, action) => {
     let tree = [ ...state.nodesTree ];
     let nodeId = action.payload.id;
     let updatedData = action.payload; 
     
     let updatedTree = updateTreeNode(tree, nodeId, updatedData);
-    state.nodesTree = [ ...updatedTree ]
+    //console.log(updatedTree);
+    state.nodesTree = [ ...updatedTree ];
 }
 
 const updateSearchUrlReducer = (state, action) => {
@@ -48,19 +72,30 @@ const updateServerUrlReducer = (state, action) => {
     state.nodesTree = [ ...initialTree ]
 }
 
+const selectTreeNodeReducer = (state, action) => {
+    let tree = [ ...state.nodesTree ];
+    let nodeId = action.payload;
+    state.selectedNode = { 
+        ...getNodeById(tree, nodeId), 
+        queryData: { ...state.selectedNode.queryData }
+    };
+}
+
 const mainSlice = createSlice({
     name: 'main',
     initialState: initialState,
     reducers: {
         updateServerUrl: updateServerUrlReducer,
-        updateSearchUrl: updateSearchUrlReducer
+        updateSearchUrl: updateSearchUrlReducer,
+        selectTreeNode: selectTreeNodeReducer
     },
     extraReducers: (builder) => {
-        builder.addCase(browseTreeNode.fulfilled, browseTreeNodeSuccess)
+        builder.addCase(browseTreeNode.fulfilled, browseTreeNodeSuccess);
+        builder.addCase(queryTreeNode.fulfilled, queryTreeNodeSuccess);
     }
 })
 
 
-export const { updateServerUrl, updateSearchUrl } = mainSlice.actions;
+export const { updateServerUrl, updateSearchUrl, selectTreeNode } = mainSlice.actions;
 
 export default mainSlice.reducer
